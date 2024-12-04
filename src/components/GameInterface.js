@@ -1,31 +1,102 @@
 // src/components/GameInterface.js
 import React, { useState } from 'react';
-import { GAME_ROOMS } from '../constants/gameConfig';
-import RoleChallenge from './RoleChallenge';
+import { GAME_ROOMS, CHALLENGES } from '../constants/gameConfig';
 import { updateUserRole, deleteUser } from '../utils/authService';
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
+
+const CelebrationModal = ({ onClose, newRole }) => (
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div className="bg-gray-800 rounded-lg p-8 max-w-md w-full text-center relative">
+      <div className="absolute inset-0 overflow-hidden">
+        <DotLottieReact
+          src="https://lottie.host/fc1a79d1-d3b5-45fe-9a1a-c66b3cb4babe/yNMb7lWLVd.lottie"
+          loop
+          autoplay
+          style={{ opacity: 0.2 }}
+        />
+      </div>
+      <div className="relative z-10">
+        <h3 className="text-3xl font-bold text-white mb-4">
+          Congratulations!
+        </h3>
+        <div className="w-32 h-32 mx-auto mb-4">
+          <DotLottieReact
+            src="https://lottie.host/fc1a79d1-d3b5-45fe-9a1a-c66b3cb4babe/yNMb7lWLVd.lottie"
+            loop
+            autoplay
+          />
+        </div>
+        <p className="text-xl text-blue-300 mb-6">
+          You've earned the rank of {newRole}!
+        </p>
+        <button
+          onClick={onClose}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg text-lg transition-colors"
+        >
+          Continue Your Adventure
+        </button>
+      </div>
+    </div>
+  </div>
+);
 
 const GameInterface = ({ username, role, onLogout, onRoleChange }) => {
+  const roleHierarchy = ['Explorer', 'Navigator', 'Master'];
   const [currentRoom, setCurrentRoom] = useState('entrance');
   const [showChallenge, setShowChallenge] = useState(false);
+  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [answer, setAnswer] = useState('');
   const [message, setMessage] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [newRole, setNewRole] = useState('');
 
-  const navigateToRoom = (roomName) => {
-    const targetRoom = GAME_ROOMS[roomName];
+  const handleChallengeSubmit = (e) => {
+    e.preventDefault();
+    const challenges = CHALLENGES[GAME_ROOMS[currentRoom].nextRoom];
     
-    if (!targetRoom.requiredRole || targetRoom.requiredRole === role) {
-      setCurrentRoom(roomName);
-      setMessage('');
+    if (answer.toLowerCase().trim() === challenges[currentQuestion].answer) {
+      if (currentQuestion < challenges.length - 1) {
+        setCurrentQuestion(currentQuestion + 1);
+        setAnswer('');
+        setMessage('Correct! Here\'s your next question.');
+      } else {
+        const nextRole = GAME_ROOMS[GAME_ROOMS[currentRoom].nextRoom].requiredRole;
+        updateUserRole(username, nextRole);
+        onRoleChange(nextRole);
+        setNewRole(nextRole);
+        setShowCelebration(true);
+        setCurrentRoom(GAME_ROOMS[currentRoom].nextRoom);
+        setShowChallenge(false);
+        setCurrentQuestion(0);
+        setAnswer('');
+      }
     } else {
-      setMessage(`You need the ${targetRoom.requiredRole} role to enter this room. Complete the challenge to level up!`);
+      setMessage('That\'s not correct. Try again!');
     }
   };
 
-  const handleRoleUp = (newRole) => {
-    updateUserRole(username, newRole);
-    onRoleChange(newRole);
-    setShowChallenge(false);
-    setMessage(`Congratulations! You are now a ${newRole}!`);
+  const handleRoomChange = (roomName) => {
+    if (roomName === 'entrance') {
+      setCurrentRoom('entrance');
+      setMessage('');
+      setShowChallenge(false);
+      setCurrentQuestion(0);
+      return;
+    }
+
+    const targetRoom = GAME_ROOMS[roomName];
+    const userRoleIndex = roleHierarchy.indexOf(role);
+    const requiredRoleIndex = roleHierarchy.indexOf(targetRoom.requiredRole);
+
+    if (!targetRoom.requiredRole || userRoleIndex >= requiredRoleIndex) {
+      setCurrentRoom(roomName);
+      setMessage(`Welcome to the ${targetRoom.nextRoomName || roomName}!`);
+      setShowChallenge(false);
+    } else {
+      setShowChallenge(true);
+      setMessage('');
+    }
   };
 
   const handleDeleteAccount = () => {
@@ -35,6 +106,13 @@ const GameInterface = ({ username, role, onLogout, onRoleChange }) => {
 
   return (
     <div className="min-h-screen bg-gray-900 p-8">
+      {showCelebration && (
+        <CelebrationModal
+          onClose={() => setShowCelebration(false)}
+          newRole={newRole}
+        />
+      )}
+
       {/* Header */}
       <div className="max-w-7xl mx-auto mb-8 flex justify-between items-center bg-gray-800 p-4 rounded-lg">
         <div className="flex items-center space-x-4">
@@ -56,113 +134,125 @@ const GameInterface = ({ username, role, onLogout, onRoleChange }) => {
         </div>
       </div>
 
-      {/* Main Game Area */}
-      <div className="max-w-7xl mx-auto grid grid-cols-3 gap-8">
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto bg-gray-800 rounded-lg p-8">
         {/* Room Description */}
-        <div className="col-span-2 bg-gray-800 p-6 rounded-lg">
-          <h3 className="text-xl font-bold text-white mb-4">
+        <div className="mb-8">
+          <h3 className="text-2xl font-bold text-white mb-4">
             {currentRoom.charAt(0).toUpperCase() + currentRoom.slice(1)}
           </h3>
-          <p className="text-gray-300 text-lg mb-6">
+          <p className="text-gray-300 text-lg">
             {GAME_ROOMS[currentRoom].description}
           </p>
-          
-          {message && (
-            <div className="bg-yellow-900 border border-yellow-700 text-yellow-100 px-4 py-3 rounded mb-6">
-              {message}
-            </div>
-          )}
-
-          {/* Navigation */}
-          <div className="space-y-4">
-            <h4 className="text-lg font-semibold text-white">Available Paths:</h4>
-            <div className="grid grid-cols-2 gap-4">
-              {GAME_ROOMS[currentRoom].nextRooms.map((room) => (
-                <button
-                  key={room}
-                  onClick={() => navigateToRoom(room)}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors text-lg"
-                >
-                  {room.split(/(?=[A-Z])/).join(' ')}
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
 
-        {/* Side Panel */}
-        <div className="space-y-6">
-          {/* Character Status */}
-          <div className="bg-gray-800 p-6 rounded-lg">
-            <h3 className="text-xl font-bold text-white mb-4">Character Status</h3>
-            <div className="space-y-3">
-              <div className="flex justify-between text-gray-300">
-                <span>Current Role:</span>
-                <span className="text-blue-400">{role}</span>
-              </div>
-              <div className="flex justify-between text-gray-300">
-                <span>Location:</span>
-                <span className="text-green-400">{currentRoom}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Challenge Section */}
-          {!showChallenge && role !== 'Master' && (
-            <div className="bg-gray-800 p-6 rounded-lg">
-              <h3 className="text-xl font-bold text-white mb-4">Role Advancement</h3>
-              <p className="text-gray-300 mb-4">
-                Ready to advance your role? Take on a geography challenge!
-              </p>
-              <button 
-                onClick={() => setShowChallenge(true)}
-                className="w-full bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg transition-colors text-lg"
-              >
-                Take Geography Challenge
-              </button>
-            </div>
-          )}
-
-          {showChallenge && (
-            <div className="bg-gray-800 p-6 rounded-lg">
-              <RoleChallenge 
-                username={username}
-                currentRole={role}
-                onRoleUp={handleRoleUp}
-              />
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Delete Account Section */}
-      <div className="max-w-7xl mx-auto mt-8 flex flex-col items-center">
-        {!showDeleteConfirm ? (
-          <button
-            onClick={() => setShowDeleteConfirm(true)}
-            className="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg transition-colors"
-          >
-            Delete Account
-          </button>
-        ) : (
-          <div className="bg-gray-800 p-6 rounded-lg text-center w-full max-w-xl">
-            <p className="text-white mb-4">Are you sure you want to delete your account? This action cannot be undone.</p>
-            <div className="space-x-4">
-              <button
-                onClick={handleDeleteAccount}
-                className="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg transition-colors"
-              >
-                Yes, Delete Account
-              </button>
-              <button
-                onClick={() => setShowDeleteConfirm(false)}
-                className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-lg transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
+        {message && (
+          <div className="mb-8 bg-blue-900/50 border border-blue-700 text-blue-100 px-6 py-4 rounded-lg">
+            {message}
           </div>
         )}
+
+        {!showChallenge ? (
+          <div className="space-y-6">
+            <h4 className="text-xl font-semibold text-white">Choose Your Path:</h4>
+            <div className="grid grid-cols-2 gap-4">
+              {currentRoom !== 'entrance' && (
+                <button
+                  onClick={() => handleRoomChange('entrance')}
+                  className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-4 rounded-lg transition-colors text-lg"
+                >
+                  Return to Entrance
+                </button>
+              )}
+              {GAME_ROOMS[currentRoom].nextRoom && (
+                <button
+                  onClick={() => handleRoomChange(GAME_ROOMS[currentRoom].nextRoom)}
+                  className={`${
+                    role === GAME_ROOMS[GAME_ROOMS[currentRoom].nextRoom].requiredRole ||
+                    roleHierarchy.indexOf(role) > roleHierarchy.indexOf(GAME_ROOMS[GAME_ROOMS[currentRoom].nextRoom].requiredRole)
+                      ? 'bg-green-600 hover:bg-green-700'
+                      : 'bg-blue-600 hover:bg-blue-700'
+                  } text-white px-6 py-4 rounded-lg transition-colors text-lg flex items-center justify-center space-x-2`}
+                >
+                  <span>Enter {GAME_ROOMS[currentRoom].nextRoomName}</span>
+                  {(role === GAME_ROOMS[GAME_ROOMS[currentRoom].nextRoom].requiredRole ||
+                    roleHierarchy.indexOf(role) > roleHierarchy.indexOf(GAME_ROOMS[GAME_ROOMS[currentRoom].nextRoom].requiredRole)) && (
+                    <span className="text-xs bg-green-500 px-2 py-1 rounded">
+                      Access Granted
+                    </span>
+                  )}
+                </button>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="bg-gray-700 rounded-lg p-6">
+            <h4 className="text-xl font-bold text-white mb-6">
+              Answer this question to proceed! (Question {currentQuestion + 1}/2)
+            </h4>
+            <p className="text-lg text-gray-300 mb-4">
+              {CHALLENGES[GAME_ROOMS[currentRoom].nextRoom][currentQuestion].question}
+            </p>
+            <form onSubmit={handleChallengeSubmit} className="space-y-4">
+              <input
+                type="text"
+                value={answer}
+                onChange={(e) => setAnswer(e.target.value)}
+                className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg text-white"
+                placeholder="Enter your answer"
+              />
+              <div className="flex space-x-4">
+                <button
+                  type="submit"
+                  className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg transition-colors"
+                >
+                  Submit Answer
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowChallenge(false);
+                    setCurrentQuestion(0);
+                    setAnswer('');
+                  }}
+                  className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg transition-colors"
+                >
+                  Cancel Challenge
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* Delete Account */}
+        <div className="mt-12 text-center">
+          {!showDeleteConfirm ? (
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors"
+            >
+              Delete Account
+            </button>
+          ) : (
+            <div className="bg-gray-700 p-4 rounded-lg">
+              <p className="text-white mb-4">Are you sure you want to delete your account?</p>
+              <div className="space-x-4">
+                <button
+                  onClick={handleDeleteAccount}
+                  className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors"
+                >
+                  Confirm Delete
+                </button>
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -6,7 +6,7 @@ const secret = new TextEncoder().encode('your-secret-key');
 export const generateToken = async (payload) => {
   const token = await new jose.SignJWT(payload)
     .setProtectedHeader({ alg: 'HS256' })
-    .setExpirationTime('24h')
+    .setExpirationTime('1h')
     .sign(secret);
   return token;
 };
