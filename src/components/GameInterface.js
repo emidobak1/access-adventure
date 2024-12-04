@@ -97,15 +97,7 @@ const GameInterface = ({ username, role, onLogout, onRoleChange }) => {
           </div>
         )}
 
-        {!showChallenge ? (
-          <RoomNavigation
-            currentRoom={currentRoom}
-            role={role}
-            roleHierarchy={roleHierarchy}
-            GAME_ROOMS={GAME_ROOMS}
-            onNavigate={handleRoomChange}
-          />
-        ) : (
+        {showChallenge ? (
           <div className="bg-gray-700 rounded-lg p-6">
             <h4 className="text-xl font-bold text-white mb-6">
               Answer this question to proceed! (Question {currentQuestion + 1}/2)
@@ -113,6 +105,15 @@ const GameInterface = ({ username, role, onLogout, onRoleChange }) => {
             <p className="text-lg text-gray-300 mb-4">
               {CHALLENGES[GAME_ROOMS[currentRoom].nextRoom][currentQuestion].question}
             </p>
+            
+            {/* Hint Section */}
+            <div className="mb-4">
+              <p className="text-yellow-300 text-sm">
+                <span className="font-bold">Hint:</span>{' '}
+                {CHALLENGES[GAME_ROOMS[currentRoom].nextRoom][currentQuestion].hint}
+              </p>
+            </div>
+
             <form onSubmit={handleChallengeSubmit} className="space-y-4">
               <input
                 type="text"
@@ -142,8 +143,15 @@ const GameInterface = ({ username, role, onLogout, onRoleChange }) => {
               </div>
             </form>
           </div>
+        ) : (
+          <RoomNavigation
+            currentRoom={currentRoom}
+            role={role}
+            roleHierarchy={roleHierarchy}
+            GAME_ROOMS={GAME_ROOMS}
+            onNavigate={handleRoomChange}
+          />
         )}
-
         <DeleteAccount
           username={username}
           onDelete={handleDeleteAccount}
