@@ -2,43 +2,10 @@
 import React, { useState } from 'react';
 import { GAME_ROOMS, CHALLENGES } from '../constants/gameConfig';
 import { updateUserRole, deleteUser } from '../utils/authService';
-import { DotLottieReact } from '@lottiefiles/dotlottie-react';
-
-const CelebrationModal = ({ onClose, newRole }) => (
-  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-    <div className="bg-gray-800 rounded-lg p-8 max-w-md w-full text-center relative">
-      <div className="absolute inset-0 overflow-hidden">
-        <DotLottieReact
-          src="https://lottie.host/fc1a79d1-d3b5-45fe-9a1a-c66b3cb4babe/yNMb7lWLVd.lottie"
-          loop
-          autoplay
-          style={{ opacity: 0.2 }}
-        />
-      </div>
-      <div className="relative z-10">
-        <h3 className="text-3xl font-bold text-white mb-4">
-          Congratulations!
-        </h3>
-        <div className="w-32 h-32 mx-auto mb-4">
-          <DotLottieReact
-            src="https://lottie.host/fc1a79d1-d3b5-45fe-9a1a-c66b3cb4babe/yNMb7lWLVd.lottie"
-            loop
-            autoplay
-          />
-        </div>
-        <p className="text-xl text-blue-300 mb-6">
-          You've earned the rank of {newRole}!
-        </p>
-        <button
-          onClick={onClose}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg text-lg transition-colors"
-        >
-          Continue Your Adventure
-        </button>
-      </div>
-    </div>
-  </div>
-);
+import Header from './Header';
+import DeleteAccount from './DeleteAccount';
+import RoomNavigation from './RoomNavigation';
+import CelebrationModal from './CelebrationModal';
 
 const GameInterface = ({ username, role, onLogout, onRoleChange }) => {
   const roleHierarchy = ['Explorer', 'Navigator', 'Master'];
@@ -113,30 +80,9 @@ const GameInterface = ({ username, role, onLogout, onRoleChange }) => {
         />
       )}
 
-      {/* Header */}
-      <div className="max-w-7xl mx-auto mb-8 flex justify-between items-center bg-gray-800 p-4 rounded-lg">
-        <div className="flex items-center space-x-4">
-          <div className="text-white">
-            <h2 className="text-2xl font-bold">Geography Adventure</h2>
-            <p className="text-gray-400">Welcome, {username}</p>
-          </div>
-        </div>
-        <div className="flex items-center space-x-4">
-          <div className="bg-blue-600 px-4 py-2 rounded-full">
-            <span className="text-white font-semibold">Role: {role}</span>
-          </div>
-          <button 
-            onClick={onLogout}
-            className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors"
-          >
-            Logout
-          </button>
-        </div>
-      </div>
+      <Header username={username} role={role} onLogout={onLogout} />
 
-      {/* Main Content */}
       <div className="max-w-7xl mx-auto bg-gray-800 rounded-lg p-8">
-        {/* Room Description */}
         <div className="mb-8">
           <h3 className="text-2xl font-bold text-white mb-4">
             {currentRoom.charAt(0).toUpperCase() + currentRoom.slice(1)}
@@ -153,38 +99,13 @@ const GameInterface = ({ username, role, onLogout, onRoleChange }) => {
         )}
 
         {!showChallenge ? (
-          <div className="space-y-6">
-            <h4 className="text-xl font-semibold text-white">Choose Your Path:</h4>
-            <div className="grid grid-cols-2 gap-4">
-              {currentRoom !== 'entrance' && (
-                <button
-                  onClick={() => handleRoomChange('entrance')}
-                  className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-4 rounded-lg transition-colors text-lg"
-                >
-                  Return to Entrance
-                </button>
-              )}
-              {GAME_ROOMS[currentRoom].nextRoom && (
-                <button
-                  onClick={() => handleRoomChange(GAME_ROOMS[currentRoom].nextRoom)}
-                  className={`${
-                    role === GAME_ROOMS[GAME_ROOMS[currentRoom].nextRoom].requiredRole ||
-                    roleHierarchy.indexOf(role) > roleHierarchy.indexOf(GAME_ROOMS[GAME_ROOMS[currentRoom].nextRoom].requiredRole)
-                      ? 'bg-green-600 hover:bg-green-700'
-                      : 'bg-blue-600 hover:bg-blue-700'
-                  } text-white px-6 py-4 rounded-lg transition-colors text-lg flex items-center justify-center space-x-2`}
-                >
-                  <span>Enter {GAME_ROOMS[currentRoom].nextRoomName}</span>
-                  {(role === GAME_ROOMS[GAME_ROOMS[currentRoom].nextRoom].requiredRole ||
-                    roleHierarchy.indexOf(role) > roleHierarchy.indexOf(GAME_ROOMS[GAME_ROOMS[currentRoom].nextRoom].requiredRole)) && (
-                    <span className="text-xs bg-green-500 px-2 py-1 rounded">
-                      Access Granted
-                    </span>
-                  )}
-                </button>
-              )}
-            </div>
-          </div>
+          <RoomNavigation
+            currentRoom={currentRoom}
+            role={role}
+            roleHierarchy={roleHierarchy}
+            GAME_ROOMS={GAME_ROOMS}
+            onNavigate={handleRoomChange}
+          />
         ) : (
           <div className="bg-gray-700 rounded-lg p-6">
             <h4 className="text-xl font-bold text-white mb-6">
@@ -224,35 +145,12 @@ const GameInterface = ({ username, role, onLogout, onRoleChange }) => {
           </div>
         )}
 
-        {/* Delete Account */}
-        <div className="mt-12 text-center">
-          {!showDeleteConfirm ? (
-            <button
-              onClick={() => setShowDeleteConfirm(true)}
-              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors"
-            >
-              Delete Account
-            </button>
-          ) : (
-            <div className="bg-gray-700 p-4 rounded-lg">
-              <p className="text-white mb-4">Are you sure you want to delete your account?</p>
-              <div className="space-x-4">
-                <button
-                  onClick={handleDeleteAccount}
-                  className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors"
-                >
-                  Confirm Delete
-                </button>
-                <button
-                  onClick={() => setShowDeleteConfirm(false)}
-                  className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
+        <DeleteAccount
+          username={username}
+          onDelete={handleDeleteAccount}
+          showConfirm={showDeleteConfirm}
+          setShowConfirm={setShowDeleteConfirm}
+        />
       </div>
     </div>
   );
