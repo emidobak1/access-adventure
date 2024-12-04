@@ -1,4 +1,3 @@
-// src/components/CelebrationModal.js
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 
 const CelebrationModal = ({ onClose, newRole }) => (

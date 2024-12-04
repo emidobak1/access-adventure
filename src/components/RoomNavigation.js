@@ -1,4 +1,3 @@
-// src/components/RoomNavigation.js
 const RoomNavigation = ({ currentRoom, role, roleHierarchy, GAME_ROOMS, onNavigate }) => {
     return (
       <div className="space-y-6">

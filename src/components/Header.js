@@ -1,4 +1,3 @@
-// src/components/Header.js
 const Header = ({ username, role, onLogout }) => {
     return (
       <div className="max-w-7xl mx-auto mb-8 flex justify-between items-center bg-gray-800 p-4 rounded-lg">

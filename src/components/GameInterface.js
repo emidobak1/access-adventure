@@ -1,4 +1,3 @@
-// src/components/GameInterface.js
 import React, { useState } from 'react';
 import { GAME_ROOMS, CHALLENGES } from '../constants/gameConfig';
 import { updateUserRole, deleteUser } from '../utils/authService';

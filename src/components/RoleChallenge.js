@@ -1,4 +1,3 @@
-// src/components/RoleChallenge.js
 import React, { useState } from 'react';
 import { updateUserRole, completeChallenge } from '../utils/authService';
 import { CHALLENGES } from '../constants/gameConfig';

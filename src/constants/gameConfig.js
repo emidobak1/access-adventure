@@ -1,4 +1,3 @@
-// src/constants/gameConfig.js
 export const GAME_ROOMS = {
   entrance: {
     description: "Welcome to the Explorer's Guild entrance hall! Here you can begin your geography adventure.",

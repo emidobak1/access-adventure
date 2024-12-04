@@ -1,4 +1,3 @@
-// src/components/DeleteAccount.js
 const DeleteAccount = ({ username, onDelete, showConfirm, setShowConfirm }) => {
     return (
       <div className="mt-12 text-center">
