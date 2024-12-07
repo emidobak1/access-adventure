@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { GAME_ROOMS, CHALLENGES } from '../constants/gameConfig';
-import { updateUserRole, deleteUser } from '../utils/authService';
+import { updateUserRole, deleteUser, fetchRoleContent } from '../utils/authService';
 import Header from './Header';
 import DeleteAccount from './DeleteAccount';
 import RoomNavigation from './RoomNavigation';
@@ -16,8 +16,21 @@ const GameInterface = ({ username, role, onLogout, onRoleChange }) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
   const [newRole, setNewRole] = useState('');
+  const [content, setContent] = useState(null);
 
-  const handleChallengeSubmit = (e) => {
+  // Fetch role-specific content when role changes
+  useEffect(() => {
+    const loadContent = async () => {
+      const token = localStorage.getItem('token');
+      const data = await fetchRoleContent(token, role);
+      if (data) {
+        setContent(data.content);
+      }
+    };
+    loadContent();
+  }, [role]);
+
+  const handleChallengeSubmit = async (e) => {
     e.preventDefault();
     const challenges = CHALLENGES[GAME_ROOMS[currentRoom].nextRoom];
     
@@ -28,14 +41,20 @@ const GameInterface = ({ username, role, onLogout, onRoleChange }) => {
         setMessage('Correct! Here\'s your next question.');
       } else {
         const nextRole = GAME_ROOMS[GAME_ROOMS[currentRoom].nextRoom].requiredRole;
-        updateUserRole(username, nextRole);
-        onRoleChange(nextRole);
-        setNewRole(nextRole);
-        setShowCelebration(true);
-        setCurrentRoom(GAME_ROOMS[currentRoom].nextRoom);
-        setShowChallenge(false);
-        setCurrentQuestion(0);
-        setAnswer('');
+        const token = localStorage.getItem('token');
+        const result = await updateUserRole(token, nextRole);
+        
+        if (result) {
+          onRoleChange(nextRole);
+          setNewRole(nextRole);
+          setShowCelebration(true);
+          setCurrentRoom(GAME_ROOMS[currentRoom].nextRoom);
+          setShowChallenge(false);
+          setCurrentQuestion(0);
+          setAnswer('');
+        } else {
+          setMessage('Error updating role. Please try again.');
+        }
       }
     } else {
       setMessage('That\'s not correct. Try again!');
@@ -65,9 +84,14 @@ const GameInterface = ({ username, role, onLogout, onRoleChange }) => {
     }
   };
 
-  const handleDeleteAccount = () => {
-    deleteUser(username);
-    onLogout();
+  const handleDeleteAccount = async () => {
+    const token = localStorage.getItem('token');
+    const success = await deleteUser(token);
+    if (success) {
+      onLogout();
+    } else {
+      setMessage('Error deleting account. Please try again.');
+    }
   };
 
   return (
@@ -89,6 +113,11 @@ const GameInterface = ({ username, role, onLogout, onRoleChange }) => {
           <p className="text-gray-300 text-lg">
             {GAME_ROOMS[currentRoom].description}
           </p>
+          {content && (
+            <div className="mt-4 text-blue-300">
+              {content}
+            </div>
+          )}
         </div>
 
         {message && (
@@ -106,7 +135,6 @@ const GameInterface = ({ username, role, onLogout, onRoleChange }) => {
               {CHALLENGES[GAME_ROOMS[currentRoom].nextRoom][currentQuestion].question}
             </p>
             
-            {/* Hint Section */}
             <div className="mb-4">
               <p className="text-yellow-300 text-sm">
                 <span className="font-bold">Hint:</span>{' '}

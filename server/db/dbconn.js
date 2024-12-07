@@ -3,50 +3,39 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const { MONGO_URI, MONGO_DB_NAME } = process.env;
-
-if (!MONGO_URI || !MONGO_DB_NAME) {
-  console.error('Missing required environment variables: MONGO_URI or MONGO_DB_NAME');
-  process.exit(1);
-}
-
 export async function connectToDatabase() {
   try {
-    const connectionString = `${MONGO_URI}/${MONGO_DB_NAME}`;
-    console.log('Attempting to connect to MongoDB...');
-    console.log(`Database: ${MONGO_DB_NAME}`);
+    const { MONGO_URI, MONGO_DB_NAME } = process.env;
+
+    if (!MONGO_URI || !MONGO_DB_NAME) {
+      throw new Error('Missing MongoDB environment variables');
+    }
+
+    // Remove any trailing slashes from MONGO_URI
+    const cleanUri = MONGO_URI.replace(/\/$/, '');
     
-    await mongoose.connect(connectionString, {
+    console.log('Attempting to connect to MongoDB Atlas...');
+    
+    await mongoose.connect(cleanUri, {
+      dbName: MONGO_DB_NAME, // Use dbName option instead of appending to URI
       useNewUrlParser: true,
       useUnifiedTopology: true,
+      retryWrites: true,
+      w: 'majority'
     });
+
+    console.log('Successfully connected to MongoDB Atlas!');
     
-    console.log('MongoDB connected successfully! 🎉');
-    
-    // Set up connection error handler
     mongoose.connection.on('error', (err) => {
-      console.error('MongoDB connection error:', err);
+      console.error('Mongoose connection error:', err);
     });
 
-    // Set up disconnection handler
-    mongoose.connection.on('disconnected', () => {
-      console.log('MongoDB disconnected');
-    });
-
-    // Handle process termination
-    process.on('SIGINT', async () => {
-      try {
-        await mongoose.connection.close();
-        console.log('MongoDB connection closed through app termination');
-        process.exit(0);
-      } catch (err) {
-        console.error('Error during MongoDB disconnection:', err);
-        process.exit(1);
-      }
+    mongoose.connection.on('connected', () => {
+      console.log('Mongoose connected to database:', MONGO_DB_NAME);
     });
 
   } catch (err) {
-    console.error('Error connecting to MongoDB:', err);
-    process.exit(1);
+    console.error('MongoDB connection error:', err);
+    throw err;
   }
 }

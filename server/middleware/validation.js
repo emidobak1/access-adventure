@@ -5,7 +5,6 @@ export const validateUserInput = (req, res, next) => {
       return res.status(400).json({ error: 'Username and password are required' });
     }
     
-    // Add basic validation rules
     if (username.length < 3) {
       return res.status(400).json({ error: 'Username must be at least 3 characters long' });
     }
@@ -20,9 +19,13 @@ export const validateUserInput = (req, res, next) => {
   export const validateRole = (req, res, next) => {
     const { newRole } = req.body;
     
+    if (!newRole) {
+      return res.status(400).json({ error: 'New role is required' });
+    }
+  
     if (!['Explorer', 'Navigator', 'Master'].includes(newRole)) {
       return res.status(400).json({ error: 'Invalid role' });
     }
-    
+  
     next();
   };

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
-
 
 const GlobeIcon = () => (
   <svg className="w-16 h-16 mb-4 text-blue-400" viewBox="0 0 100 100">
@@ -12,30 +12,39 @@ const GlobeIcon = () => (
   </svg>
 );
 
-const Login = ({ onLogin, onSwitchToRegister }) => {
+const Login = ({ onLogin }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
     
-    if (!username || !password) {
-      setError('Please enter both username and password');
+    try {
+      if (!username || !password) {
+        throw new Error('Please enter both username and password');
+      }
+
+      console.log('Attempting login for:', username);
+      const success = await onLogin(username, password);
+      
+      if (success) {
+        console.log('Login successful, navigating to game');
+        navigate('/game');
+      } else {
+        throw new Error('Invalid username or password');
+      }
+    } catch (err) {
+      console.error('Login error:', err);
+      setError(err.message);
+    } finally {
       setIsLoading(false);
-      return;
     }
-
-    const success = await onLogin(username, password);
-    if (!success) {
-      setError('Invalid username or password');
-    }
-    setIsLoading(false);
   };
-
 
   return (
     <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4 relative overflow-hidden">
@@ -53,7 +62,7 @@ const Login = ({ onLogin, onSwitchToRegister }) => {
             opacity: 0.15,
             objectFit: 'cover'
           }}
-        /> 
+        />
       </div>
       
       <div className="max-w-md w-full relative z-10">
@@ -118,13 +127,12 @@ const Login = ({ onLogin, onSwitchToRegister }) => {
               <div className="mt-6 text-center">
                 <p className="text-gray-400">
                   New to the adventure?{' '}
-                  <button
-                    type="button"
-                    onClick={onSwitchToRegister}
+                  <Link
+                    to="/register"
                     className="text-blue-400 hover:text-blue-300 font-medium focus:outline-none focus:underline transition-colors"
                   >
                     Register here
-                  </button>
+                  </Link>
                 </p>
               </div>
             </form>

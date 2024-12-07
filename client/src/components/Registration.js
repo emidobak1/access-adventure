@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 
 const GlobeIcon = () => (
@@ -11,36 +12,47 @@ const GlobeIcon = () => (
   </svg>
 );
 
-const Registration = ({ onRegister, onSwitchToLogin }) => {
+const Registration = ({ onRegister }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
     
-    if (!username || !password || !confirmPassword) {
-      setError('Please fill in all fields');
-      setIsLoading(false);
-      return;
-    }
+    try {
+      if (!username || !password || !confirmPassword) {
+        throw new Error('Please fill in all fields');
+      }
 
-    if (password !== confirmPassword) {
-      setError('Passwords do not match');
-      setIsLoading(false);
-      return;
-    }
+      if (password !== confirmPassword) {
+        throw new Error('Passwords do not match');
+      }
 
-    const success = onRegister(username, password);
-    
-    if (!success) {
-      setError('Username already exists');
+      if (password.length < 6) {
+        throw new Error('Password must be at least 6 characters long');
+      }
+
+      console.log('Attempting registration for:', username);
+      const success = await onRegister(username, password);
+      
+      if (success) {
+        console.log('Registration successful, navigating to game');
+        navigate('/game');
+      } else {
+        throw new Error('Registration failed. Username may already exist.');
+      }
+    } catch (err) {
+      console.error('Registration error:', err);
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   return (
@@ -138,13 +150,12 @@ const Registration = ({ onRegister, onSwitchToLogin }) => {
               <div className="mt-6 text-center">
                 <p className="text-gray-400">
                   Already an explorer?{' '}
-                  <button
-                    type="button"
-                    onClick={onSwitchToLogin}
+                  <Link
+                    to="/login"
                     className="text-blue-400 hover:text-blue-300 font-medium focus:outline-none focus:underline transition-colors"
                   >
                     Login here
-                  </button>
+                  </Link>
                 </p>
               </div>
             </form>
