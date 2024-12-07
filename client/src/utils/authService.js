@@ -144,14 +144,23 @@ export const logoutUser = async (token) => {
 
 export const fetchRoleContent = async (token, role) => {
   try {
+    console.log('Fetching content for role:', role);
     const response = await fetch(`${API_URL}/game/${role.toLowerCase()}-content`, {
       headers: {
-        'Authorization': `Bearer ${token}`,
-      },
+        'Authorization': `Bearer ${token}`
+      }
     });
-    return handleResponse(response);
+
+    const data = await response.json();
+    
+    if (!response.ok) {
+      console.error('Content fetch error:', data);
+      throw new Error(data.error || 'Failed to fetch content');
+    }
+
+    return data;
   } catch (error) {
-    console.error(`Error fetching ${role} content:`, error);
+    console.error('Content fetch error:', error);
     return null;
   }
 };

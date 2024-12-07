@@ -3,7 +3,6 @@ import jwt from 'jsonwebtoken';
 export const authenticateToken = (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
-    
     if (!authHeader?.startsWith('Bearer ')) {
       return res.status(401).json({ error: 'No token provided' });
     }
@@ -13,13 +12,9 @@ export const authenticateToken = (req, res, next) => {
     jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
       if (err) {
         console.error('Token verification error:', err);
-        if (err.name === 'TokenExpiredError') {
-          return res.status(401).json({ error: 'Token expired' });
-        }
         return res.status(403).json({ error: 'Invalid token' });
       }
-
-      req.user = decoded; // Store decoded user info
+      req.user = decoded;
       next();
     });
   } catch (error) {
@@ -28,20 +23,29 @@ export const authenticateToken = (req, res, next) => {
   }
 };
 
-// Role-based access control middleware
 export const authorize = (allowedRoles) => {
-  return (req, res, next) => {
-    if (!req.user || !req.user.role) {
-      return res.status(403).json({ error: 'No role specified' });
-    }
+  return async (req, res, next) => {
+    try {
+      // Get fresh user data from database
+      const user = await User.findById(req.user.userId);
+      
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
 
-    if (!allowedRoles.includes(req.user.role)) {
-      return res.status(403).json({ 
-        error: `Access denied. Required role: ${allowedRoles.join(' or ')}`
-      });
-    }
+      // Check if user's current role is in allowed roles
+      if (!allowedRoles.includes(user.role)) {
+        console.log('Access denied. User role:', user.role, 'Required roles:', allowedRoles);
+        return res.status(403).json({ 
+          error: `Access denied. Required role: ${allowedRoles.join(' or ')}`
+        });
+      }
 
-    next();
+      next();
+    } catch (error) {
+      console.error('Authorization error:', error);
+      res.status(500).json({ error: 'Authorization failed' });
+    }
   };
 };
 
