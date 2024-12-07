@@ -20,6 +20,17 @@ const corsOptions = {
   optionsSuccessStatus: 204
 };
 
+// CORS configuration
+app.use(cors({
+  origin: [
+    'http://localhost:3000',
+    'https://your-frontend-vercel-url.vercel.app'
+  ],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+}));
+
 // Apply CORS with options
 app.use(cors(corsOptions));
 
