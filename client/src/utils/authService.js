@@ -1,4 +1,4 @@
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
+const API_URL = process.env.REACT_APP_API_URL || 'https://access-adventure-backend.vercel.app/api';
 
 // Helper function to handle API responses
 const handleResponse = async (response) => {
@@ -17,7 +17,7 @@ export const registerUser = async (username, password) => {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({ username, password}),
     });
 
     console.log('Registration response status:', response.status); // Debug log
