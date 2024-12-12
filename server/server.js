@@ -24,7 +24,7 @@ const corsOptions = {
 app.use(cors({
   origin: [
     'http://localhost:3000',
-    'http://access-adventure-exgq.vercel.app'
+    'https://access-adventure-exgq.vercel.app'
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
